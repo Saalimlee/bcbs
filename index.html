@@ -3,21 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase File Upload</title>
+    <title>BCBS Provider Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #fff;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 80%;
+            max-width: 500px;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #progress {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #007bff;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+        #status.success {
+            color: #28a745;
+        }
+        #status.error {
+            color: #dc3545;
+        }
+    </style>
 </head>
 <body>
-    <h1>Upload a File to Firebase</h1>
-    
-    <input type="file" id="fileInput" multiple />
-    <button onclick="uploadFile()">Upload File</button>
-    
-    <div id="progress"></div>
-    <div id="status"></div>
+    <div class="container">
+        <h1>Upload a File to Firebase</h1>
+        
+        <input type="file" id="fileInput" multiple />
+        <button onclick="uploadFile()">Upload File</button>
+        
+        <div id="progress">Upload Progress: 0%</div>
+        <div id="status"></div>
+    </div>
 
     <script type="module">
         // Firebase configuration
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+        import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyBvBCociR4ASb2E59gl9XmVedip3u4XX0k",
@@ -34,34 +97,38 @@
         const storage = getStorage(app);
 
         // Upload File function
-        function uploadFile() {
+        window.uploadFile = function() {
             const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            
-            if (file) {
-                const storageRef = ref(storage, 'uploads/' + file.name);
-                const uploadTask = uploadBytesResumable(storageRef, file);
-                
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        // Progress handling
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        document.getElementById('progress').textContent = 'Upload is ' + progress + '% done';
-                    }, 
-                    (error) => {
-                        // Error handling
-                        document.getElementById('status').textContent = 'Error: ' + error.message;
-                    }, 
-                    () => {
-                        // Success handling
-                        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                            document.getElementById('status').textContent = 'File available at: ' + downloadURL;
-                        });
-                    }
-                );
-            } else {
-                alert('No file selected!');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                document.getElementById('status').textContent = 'Please select a file!';
+                document.getElementById('status').className = 'error';
+                return;
             }
+
+            const file = files[0];
+            const storageRef = ref(storage, 'uploads/' + file.name);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    // Progress handling
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    document.getElementById('progress').textContent = 'Upload Progress: ' + Math.round(progress) + '%';
+                }, 
+                (error) => {
+                    // Error handling
+                    console.error('Upload Error:', error);
+                    document.getElementById('status').textContent = 'key failed: ' + error.message;
+                    document.getElementById('status').className = 'error';
+                }, 
+                () => {
+                    // Success handling
+                    document.getElementById('status').textContent = 'keyed successfully!';
+                    document.getElementById('status').className = 'success';
+                }
+            );
         }
     </script>
 </body>
